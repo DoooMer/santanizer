@@ -17,6 +17,11 @@ public class KeyPersonStorage
         keyPersons.put(key, new HashSet<>());
     }
 
+    public boolean has(String key)
+    {
+        return keyPersons.containsKey(key);
+    }
+
     public void add(String key, Person person)
     {
         keyPersons.get(key).add(person);
