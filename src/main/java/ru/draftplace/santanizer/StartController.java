@@ -19,10 +19,13 @@ public class StartController
 {
     private final KeyPersonStorage storage;
 
+    private final NotificationSender notificationSender;
+
     @Autowired
-    public StartController(KeyPersonStorage storage)
+    public StartController(KeyPersonStorage storage, NotificationSender notificationSender)
     {
         this.storage = storage;
+        this.notificationSender = notificationSender;
     }
 
     /**
@@ -34,7 +37,7 @@ public class StartController
     public String start(@RequestParam(required = false) String key, Model view)
     {
 
-        if (key == null) {
+        if (key == null || !storage.has(key)) {
             // генерация ключа (ID "сессии")
             key = UUID.randomUUID().toString();
             storage.register(key);
@@ -95,8 +98,11 @@ public class StartController
         Set<Pair> result = pairSelector.select();
         log.info("ProcessingPairs selected.");
 
-        // TODO: send emails
         System.out.println(result);
+        for (Pair pair : result) {
+            notificationSender.notifySanta(pair.getSanta());
+        }
+        log.info("Notifications sent.");
 
         return new RedirectView("/result?key=" + key);
     }
