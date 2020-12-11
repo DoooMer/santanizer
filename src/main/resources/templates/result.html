@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Santanizer - automate secret santa selection. Results.</title>
+</head>
+<body>
+<h1>Step 2. Getting result.</h1>
+<div th:if="!${processed}">
+    <p th:text="${error}"></p>
+    <p><a th:href="@{/}">Try start again</a></p>
+</div>
+<div th:if="${processed}">
+    <p>Pairs selected.</p>
+    <p>Additional information sent to emails.</p>
+    <p>Or <a th:href="@{/}">start again</a>.</p>
+</div>
+</body>
+</html>

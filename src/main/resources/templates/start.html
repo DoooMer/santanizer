@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Santanizer - automate secret santa selection.</title>
+</head>
+<body>
+<h1>Step 1. Add persons list.</h1>
+<form action="#" method="post" th:action="@{'/add?key=' + ${key}}" th:object="${person}">
+    <div>
+        <p th:each="persn, stat: ${persons}">
+            <span th:text="${stat.index + 1}"></span>
+            <span th:text="${persn.name}"></span>
+            <span th:text="${persn.email}"></span>
+        </p>
+    </div>
+    <div>
+        <input type="text" th:field="*{name}" placeholder="Name"/>
+        <input type="text" th:field="*{email}" placeholder="Email">
+    </div>
+    <button type="submit">Add</button>
+    <button th:if="${canNext}" type="submit" name="nextAction" value="next">Add and get result</button>
+</form>
+</body>
+</html>
