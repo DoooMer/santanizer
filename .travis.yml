@@ -11,10 +11,6 @@ after_success:
   - echo "Success. Move to server."
 addons:
   ssh_known_hosts: $DEPLOY_HOST
-before_deploy:
-  - echo ${TRAVIS_BUILD_DIR}
-  - echo ${TRAVIS_COMMIT}
-#  - echo "$DEPLOY_KEY" | ssh-add - > /dev/null
 deploy:
   provider: script
   skip_cleanup: true
