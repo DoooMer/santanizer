@@ -5,17 +5,26 @@ os: linux
 cache:
   directories:
     - $HOME/.m2
-script:
-  - mvn clean install
-after_success:
-  - echo "Success. Move to server."
-addons:
-  ssh_known_hosts: $DEPLOY_HOST
-deploy:
-  provider: script
-  skip_cleanup: true
-  script: rsync -r --delete-after --quiet $TRAVIS_BUILD_DIR/target/santanizer-0.0.1-SNAPSHOT.jar $DEPLOY_PATH/app/santanizer.jar
-  on:
-    all_branches: true
-after_deploy:
-  - ssh -T $DEPLOY_PATH 'service santanizer restart && systemctl daemon-reload'
+#script:
+#  - mvn clean install
+#after_success:
+#  - echo "Success. Move to server."
+#addons:
+#  ssh_known_hosts: $DEPLOY_HOST
+#deploy:
+#  provider: script
+#  skip_cleanup: true
+#  script: rsync -r --delete-after --quiet $TRAVIS_BUILD_DIR/target/santanizer-0.0.1-SNAPSHOT.jar $DEPLOY_PATH/app/santanizer.jar
+#  on:
+#    all_branches: true
+#after_deploy:
+#  - ssh -T $DEPLOY_PATH 'service santanizer restart && systemctl daemon-reload'
+jobs:
+  include:
+    - stage: build
+      script:
+        - mvn clean install
+    - stage: deploy
+      script:
+        - rsync -r --delete-after --quiet $TRAVIS_BUILD_DIR/target/santanizer-0.0.1-SNAPSHOT.jar $DEPLOY_PATH/app/santanizer.jar
+        - ssh -T $DEPLOY_PATH 'service santanizer restart && systemctl daemon-reload'
