@@ -12,13 +12,13 @@ after_success:
 addons:
   ssh_known_hosts: $DEPLOY_HOST
 before_deploy:
-  - echo $TRAVIS_BUILD_DIR
-  - echo $TRAVIS_COMMIT
-  - echo "$DEPLOY_KEY" | ssh-add - > /dev/null
+  - echo ${TRAVIS_BUILD_DIR}
+  - echo ${TRAVIS_COMMIT}
+#  - echo "$DEPLOY_KEY" | ssh-add - > /dev/null
 deploy:
   provider: script
   skip_cleanup: true
-  script: rsync -r --delete-after --quiet $TRAVIS_BUILD_DIR/target/santanizer-0.0.1-SNAPSHOT.jar $DEPLOY_PATH/santanizer.jar
+  script: rsync -r --delete-after --quiet $TRAVIS_BUILD_DIR/target/santanizer-0.0.1-SNAPSHOT.jar $DEPLOY_PATH/app/santanizer.jar
   on:
     all_branches: true
 after_deploy:
