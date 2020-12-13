@@ -6,7 +6,20 @@ cache:
     - $HOME/.m2
 script:
   - mvn clean install
-  - echo $PWD
-  - ls -l $PWD
 after_success:
   - echo "Success. Move to server."
+addons:
+  ssh_known_hosts: $DEPLOY_HOST
+  artifacts:
+    target_paths:
+      - $TRAVIS_BUILD_DIR/target/santanizer-0.0.1-SNAPSHOT.jar
+before_deploy:
+  - echo $TRAVIS_BUILD_DIR
+  - echo $TRAVIS_COMMIT
+  - echo "$DEPLOY_KEY" | ssh-add - > /dev/null
+deploy:
+  provider: script
+  skip_cleanup: true
+  script: rsync -r --delete-after --quiet $TRAVIS_BUILD_DIR/target/santanizer-0.0.1-SNAPSHOT.jar $DEPLOY_PATH/santanizer.jar
+after_deploy:
+  - ssh -T $DEPLOY_PATH 'service santanizer restart && systemctl daemon-reload'
