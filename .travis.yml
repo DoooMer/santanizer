@@ -38,5 +38,5 @@ jobs:
         - ssh-keyscan -t rsa ${DEPLOY_HOST} >> $HOME/.ssh/known_hosts
         #        error: request password - not found pub key
         - echo $DEPLOY_PATH
-        - rsync -r --delete-after --quiet $TRAVIS_BUILD_DIR/target/santanizer-0.0.1-SNAPSHOT.jar $DEPLOY_PATH/app/santanizer.jar
+        - rsync -r --delete-after --quiet $TRAVIS_BUILD_DIR/target/santanizer-0.0.1-SNAPSHOT.jar $DEPLOY_PATH:/app/santanizer.jar
         - ssh -T $DEPLOY_PATH 'service santanizer restart && systemctl daemon-reload'
