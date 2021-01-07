@@ -28,7 +28,7 @@ jobs:
     - stage: deploy
       before_script:
         - eval $(ssh-agent -s)
-        - echo "$DEPLOY_KEY_W" | base64 -d | ssh-add - > /dev/null
+        - echo "$DEPLOY_KEY_W" | base64 -d > ssh-add - > /dev/null
         - mkdir -p ~/.ssh
         - chmod 700 ~/.ssh
       script:
