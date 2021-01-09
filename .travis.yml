@@ -31,7 +31,7 @@ jobs:
         - chmod 700 ~/.ssh
         - eval $(ssh-agent -s)
         - echo "$DEPLOY_KEY_W"
-        - echo "$DEPLOY_KEY_W" | base64 -d > $HOME/id_rsa
+        - (echo "$DEPLOY_KEY_W" | base64 -d) > $HOME/id_rsa
         - cat $HOME/id_rsa
         #        - ssh-add - > /dev/null
         # ===
