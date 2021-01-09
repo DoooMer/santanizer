@@ -30,14 +30,13 @@ jobs:
         - mkdir -p ~/.ssh
         - chmod 700 ~/.ssh
         - eval $(ssh-agent -s)
-        - echo "$DEPLOY_KEY_W" | base64 -d | cat
+        - echo "$DEPLOY_KEY_W"
+        - echo "$DEPLOY_KEY_W" | base64 -d > $HOME/id_rsa
+        - cat $HOME/id_rsa
         #        - ssh-add - > /dev/null
         # ===
-        - echo $TRAVIS_BUILD_DIR
-        - ls -l $TRAVIS_BUILD_DIR/target
         #        add $DEPLOY_HOST to known_hosts
         - ssh-keyscan -t rsa ${DEPLOY_HOST} >> $HOME/.ssh/known_hosts
         #        error: request password - not found pub key
-        - echo $DEPLOY_PATH
-        - rsync -r --delete-after --quiet $TRAVIS_BUILD_DIR/target/santanizer-0.0.1-SNAPSHOT.jar $DEPLOY_PATH:/app/santanizer.jar
-        - ssh -T $DEPLOY_PATH 'service santanizer restart && systemctl daemon-reload'
+#        - rsync -r --delete-after --quiet $TRAVIS_BUILD_DIR/target/santanizer-0.0.1-SNAPSHOT.jar $DEPLOY_PATH:/app/santanizer.jar
+#        - ssh -T $DEPLOY_PATH 'service santanizer restart && systemctl daemon-reload'
