@@ -26,12 +26,12 @@ jobs:
       script:
         - mvn clean install
     - stage: deploy
-      before_script:
-        - eval $(ssh-agent -s)
-        - echo "$DEPLOY_KEY_W" | base64 -d > ssh-add - > /dev/null
+      script:
         - mkdir -p ~/.ssh
         - chmod 700 ~/.ssh
-      script:
+        - eval $(ssh-agent -s)
+        - echo "$DEPLOY_KEY_W" | base64 -d | ssh-add - > /dev/null
+        # ===
         - echo $TRAVIS_BUILD_DIR
         - ls -l $TRAVIS_BUILD_DIR/target
         #        add $DEPLOY_HOST to known_hosts
