@@ -22,15 +22,16 @@ cache:
 #  - ssh -T $DEPLOY_PATH 'service santanizer restart && systemctl daemon-reload'
 jobs:
   include:
-    - stage: build
-      script:
-        - mvn clean install
+#    - stage: build
+    #      script:
+    #        - mvn clean install
     - stage: deploy
       script:
         - mkdir -p ~/.ssh
         - chmod 700 ~/.ssh
         - eval $(ssh-agent -s)
-        - echo "$DEPLOY_KEY_W" | base64 -d | ssh-add - > /dev/null
+        - echo "$DEPLOY_KEY_W" | base64 -d | cat
+        #        - ssh-add - > /dev/null
         # ===
         - echo $TRAVIS_BUILD_DIR
         - ls -l $TRAVIS_BUILD_DIR/target
