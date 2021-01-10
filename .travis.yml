@@ -32,6 +32,8 @@ jobs:
         - mkdir -p ~/.ssh
         - chmod 700 ~/.ssh
         - eval $(ssh-agent -s)
+        - chmod 600 ./.travis/deploy_key
+        - echo -e "Host $SERVER_IP_ADDRESS\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
         - ssh-add ./.travis/deploy_key
         # ===
         #        add $DEPLOY_HOST to known_hosts
