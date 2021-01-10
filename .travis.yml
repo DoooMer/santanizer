@@ -26,12 +26,13 @@ jobs:
     #      script:
     #        - mvn clean install
     - stage: deploy
+      before_install:
+        - openssl aes-256-cbc -d -a -pass pass:$DEPLOY_KEY_PASS -pbkdf2 -in ./.travis/deploy_key.enc -out ./.travis/deploy_key
       script:
         - mkdir -p ~/.ssh
         - chmod 700 ~/.ssh
         - eval $(ssh-agent -s)
-        - (echo "$DEPLOY_KEY_W" | base64 -d) > $HOME/id_rsa
-        - cat $HOME/id_rsa | ssh-add - > /dev/null
+        - ssh-add ./.travis/deploy_key
         # ===
         #        add $DEPLOY_HOST to known_hosts
         - ssh-keyscan -t rsa ${DEPLOY_HOST} >> $HOME/.ssh/known_hosts
