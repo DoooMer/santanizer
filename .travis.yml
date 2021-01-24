@@ -6,38 +6,22 @@ dist: focal
 cache:
   directories:
     - $HOME/.m2
-#script:
-#  - mvn clean install
-#after_success:
-#  - echo "Success. Move to server."
-#addons:
-#  ssh_known_hosts: $DEPLOY_HOST
-#deploy:
-#  provider: script
-#  skip_cleanup: true
-#  script: rsync -r --delete-after --quiet $TRAVIS_BUILD_DIR/target/santanizer-0.0.1-SNAPSHOT.jar $DEPLOY_PATH/app/santanizer.jar
-#  on:
-#    all_branches: true
-#after_deploy:
-#  - ssh -T $DEPLOY_PATH 'service santanizer restart && systemctl daemon-reload'
 jobs:
   include:
-#    - stage: build
-    #      script:
-    #        - mvn clean install
+    - stage: build
+      script:
+        - mvn clean install
     - stage: deploy
       before_install:
         - openssl aes-256-cbc -d -a -pass pass:$DEPLOY_KEY_PASS -pbkdf2 -in ./.travis/deploy_key.enc -out ./.travis/deploy_key
       script:
+        - java -version
         - mkdir -p ~/.ssh
         - chmod 700 ~/.ssh
         - eval $(ssh-agent -s)
         - chmod 600 ./.travis/deploy_key
         - echo -e "Host $SERVER_IP_ADDRESS\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
         - ssh-add ./.travis/deploy_key
-        # ===
-        #        add $DEPLOY_HOST to known_hosts
         - ssh-keyscan -t rsa ${DEPLOY_HOST} >> $HOME/.ssh/known_hosts
-        #        error: request password - not found pub key
         - rsync -r --delete-after --quiet $TRAVIS_BUILD_DIR/target/santanizer-0.0.1-SNAPSHOT.jar $DEPLOY_PATH:/app/santanizer.jar
-#        - ssh -T $DEPLOY_PATH 'service santanizer restart && systemctl daemon-reload'
+        - ssh -T $DEPLOY_PATH 'service santanizer restart && systemctl daemon-reload'
