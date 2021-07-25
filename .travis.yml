@@ -9,9 +9,11 @@ cache:
 jobs:
   include:
     - stage: build
+      if: branch = master
       script:
         - mvn clean install
     - stage: deploy
+      if: branch = master
       before_install:
         - openssl aes-256-cbc -d -a -pass pass:$DEPLOY_KEY_PASS -pbkdf2 -in ./.travis/deploy_key.enc -out ./.travis/deploy_key
       script:

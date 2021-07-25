@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Santanizer - automate secret santa selection. Access request.</title>
+</head>
+<body>
+<h1>Access request</h1>
+<form action="#" method="post" th:action="@{'/access/request'}" th:object="${accessRequest}">
+    <div>
+        <label>
+            Enter your email for access to service<br>
+            <input type="text" th:field="*{email}" placeholder="Email">
+        </label>
+    </div>
+    <button type="submit">Send</button>
+</form>
+</body>
+</html>

@@ -9,9 +9,11 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.view.RedirectView;
+import ru.draftplace.santanizer.access.dao.AccessRequest;
+import ru.draftplace.santanizer.access.dao.AccessRequestRepository;
 
+import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 @Controller
 @Slf4j
@@ -21,11 +23,18 @@ public class StartController
 
     private final NotificationSender notificationSender;
 
+    private final AccessRequestRepository accessRequestRepository;
+
     @Autowired
-    public StartController(KeyPersonStorage storage, NotificationSender notificationSender)
+    public StartController(
+            KeyPersonStorage storage,
+            NotificationSender notificationSender,
+            AccessRequestRepository accessRequestRepository
+    )
     {
         this.storage = storage;
         this.notificationSender = notificationSender;
+        this.accessRequestRepository = accessRequestRepository;
     }
 
     /**
@@ -37,11 +46,19 @@ public class StartController
     public String start(@RequestParam(required = false) String key, Model view)
     {
 
-        if (key == null || !storage.has(key)) {
-            // генерация ключа (ID "сессии")
-            key = UUID.randomUUID().toString();
-            storage.register(key);
+//        if (key == null || !storage.has(key)) {
+//            // генерация ключа (ID "сессии")
+//            key = UUID.randomUUID().toString();
+//            storage.register(key);
+//        }
+
+        Optional<AccessRequest> accessRequest = accessRequestRepository.findOneByKey(key);
+
+        if (accessRequest.isEmpty()) {
+            return "register";
         }
+
+        storage.register(key);
 
         view.addAttribute("person", new Person()); // для добавления
         view.addAttribute("persons", storage.get(key)); // список
@@ -125,6 +142,7 @@ public class StartController
         view.addAttribute("processed", processed);
 
         storage.forget(key);
+        // TODO: close access
         log.info("Persons list was cleaned.");
 
         return "result";
