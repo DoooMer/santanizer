@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.sql.Time;
 import java.util.UUID;
 
 @Entity
@@ -34,6 +35,11 @@ public class AccessRequest
     @Getter
     @Setter
     private AccessRequestStatus status;
+
+    @Column
+    @Getter
+    @Setter
+    private Time expiration;
 
     @PrePersist
     public void generateId()

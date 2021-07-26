@@ -2,7 +2,10 @@ package ru.draftplace.santanizer.access;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import ru.draftplace.santanizer.access.dao.AccessRequest;
 import ru.draftplace.santanizer.access.dao.AccessRequestRepository;
@@ -17,10 +20,19 @@ public class AccessActivator
 {
     private final AccessRequestRepository requestRepository;
 
+    private final JavaMailSender mailSender;
+
+    @Value("${notification.mail.from}")
+    private String mailFrom;
+
     @Autowired
-    public AccessActivator(AccessRequestRepository requestRepository)
+    public AccessActivator(
+            AccessRequestRepository requestRepository,
+            JavaMailSender mailSender
+    )
     {
         this.requestRepository = requestRepository;
+        this.mailSender = mailSender;
     }
 
     public void activate()
@@ -37,13 +49,25 @@ public class AccessActivator
             request.setStatus(AccessRequestStatus.ACCEPTED);
             requestRepository.save(request);
             log.info("Request for <" + request.getEmail() + "> accepted");
-            log.info("===\nUse key: " + request.getKey() + "\n===");
+            log.info("===\nKey: " + request.getKey() + "\n===");
             // send key by email
+            notify(request);
         });
     }
 
     private String generateKey()
     {
         return UUID.randomUUID().toString();
+    }
+
+    private void notify(AccessRequest request)
+    {
+        SimpleMailMessage mailMessage = new SimpleMailMessage();
+        mailMessage.setFrom(mailFrom);
+        mailMessage.setTo(request.getEmail());
+        mailMessage.setSubject("Santanizer");
+        mailMessage.setText("Your access request was accepted.\n\nUse key " + request.getKey());
+
+        mailSender.send(mailMessage);
     }
 }

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.view.RedirectView;
 import ru.draftplace.santanizer.access.dao.AccessRequest;
 import ru.draftplace.santanizer.access.dao.AccessRequestRepository;
+import ru.draftplace.santanizer.access.dao.AccessRequestStatus;
 
 import java.util.Optional;
 import java.util.Set;
@@ -45,25 +46,22 @@ public class StartController
     @GetMapping("/")
     public String start(@RequestParam(required = false) String key, Model view)
     {
-
-//        if (key == null || !storage.has(key)) {
-//            // генерация ключа (ID "сессии")
-//            key = UUID.randomUUID().toString();
-//            storage.register(key);
-//        }
-
-        Optional<AccessRequest> accessRequest = accessRequestRepository.findOneByKey(key);
-
-        if (accessRequest.isEmpty()) {
+        try {
+            AccessRequest accessRequest = validateAccessByKey(key);
+        } catch (NoAccessException e) {
             return "register";
         }
 
-        storage.register(key);
+        if (!storage.has(key)) {
+            storage.register(key);
+        }
 
         view.addAttribute("person", new Person()); // для добавления
         view.addAttribute("persons", storage.get(key)); // список
         view.addAttribute("canNext", storage.size(key) > 1); // возможность перехода
         view.addAttribute("key", key);
+
+        log.info(logPrefix(key) + "Starting.");
 
         return "start";
     }
@@ -82,12 +80,18 @@ public class StartController
     )
     {
 
-        if (!person.isEmpty()) {
-            storage.add(key, person);
-            log.info("persons count: " + storage.size(key));
+        try {
+            AccessRequest accessRequest = validateAccessByKey(key);
+        } catch (NoAccessException e) {
+            return new RedirectView("/access");
         }
 
-        log.info("next action: " + nextAction);
+        if (!person.isEmpty()) {
+            storage.add(key, person);
+            log.info(logPrefix(key) + "persons count: " + storage.size(key));
+        }
+
+        log.info(logPrefix(key) + "next action: " + nextAction);
 
         return nextAction.equals("next")
                 ? new RedirectView("/processing?key=" + key)
@@ -102,24 +106,29 @@ public class StartController
     @GetMapping("/processing")
     public RedirectView processing(@RequestParam String key)
     {
+        try {
+            AccessRequest accessRequest = validateAccessByKey(key);
+        } catch (NoAccessException e) {
+            return new RedirectView("/access");
+        }
 
         if (storage.size(key) < 2) {
-            log.info("Persons count is too low. Required at least 2 persons.");
+            log.info(logPrefix(key) + "Persons count is too low. Required at least 2 persons.");
             return new RedirectView("/");
         }
 
-        log.info("Run processing...");
+        log.info(logPrefix(key) + "Run processing...");
         PairSelector pairSelector = new PairSelector(storage.get(key));
 
         // пары
         Set<Pair> result = pairSelector.select();
-        log.info("ProcessingPairs selected.");
+        log.info(logPrefix(key) + "ProcessingPairs selected.");
 
         System.out.println(result);
         for (Pair pair : result) {
-            notificationSender.notifySanta(pair.getSanta());
+            notificationSender.notifySanta(pair.getSanta(), pair.getPerson());
         }
-        log.info("Notifications sent.");
+        log.info(logPrefix(key) + "Notifications sent.");
 
         return new RedirectView("/result?key=" + key);
     }
@@ -132,6 +141,14 @@ public class StartController
     @GetMapping("result")
     public String result(@RequestParam String key, Model view)
     {
+        AccessRequest accessRequest;
+
+        try {
+            accessRequest = validateAccessByKey(key);
+        } catch (NoAccessException e) {
+            return "register";
+        }
+
         boolean processed = true;
 
         if (storage.size(key) < 2) {
@@ -142,9 +159,27 @@ public class StartController
         view.addAttribute("processed", processed);
 
         storage.forget(key);
-        // TODO: close access
-        log.info("Persons list was cleaned.");
+        accessRequest.setStatus(AccessRequestStatus.CLOSED);
+        log.info(logPrefix(key) + "Persons list was cleaned.");
+        log.info(logPrefix(key) + "Access is closed.");
 
         return "result";
+    }
+
+    protected AccessRequest validateAccessByKey(String key)
+    {
+        Optional<AccessRequest> accessRequest = accessRequestRepository.findOneByKey(key);
+
+        if (accessRequest.isEmpty()) {
+            log.warn(logPrefix(key) + "Try access by invalid key.");
+            throw new NoAccessException();
+        }
+
+        return accessRequest.get();
+    }
+
+    private String logPrefix(String key)
+    {
+        return "[" + key + "] ";
     }
 }

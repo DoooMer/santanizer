@@ -8,8 +8,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import ru.draftplace.santanizer.access.dao.AccessRequestRepository;
+import ru.draftplace.santanizer.access.dao.AccessRequestStatus;
 import ru.draftplace.santanizer.access.model.AccessRequest;
 
+import java.util.ArrayList;
 import java.util.Optional;
 
 @Controller
@@ -43,8 +45,13 @@ public class AccessController
         // запрос одобрен, неактивен и не прошел таймаут - предупреждение
         // запрос отклонен и не прошел таймаут - предупреждение
 
-        Optional<ru.draftplace.santanizer.access.dao.AccessRequest> currentAccess = accessRequestRepository.findOneByEmail(
-                accessRequest.getEmail());
+        ArrayList<AccessRequestStatus> statuses = new ArrayList<>();
+        statuses.add(AccessRequestStatus.WAITING);
+        statuses.add(AccessRequestStatus.ACCEPTED);
+        Optional<ru.draftplace.santanizer.access.dao.AccessRequest> currentAccess = accessRequestRepository.findOneByStatusInAndEmail(
+                statuses,
+                accessRequest.getEmail()
+        );
 
         if (currentAccess.isPresent()) {
             if (currentAccess.get().getKey().isEmpty()) {
@@ -60,6 +67,7 @@ public class AccessController
         ru.draftplace.santanizer.access.dao.AccessRequest request = new ru.draftplace.santanizer.access.dao.AccessRequest();
         request.setEmail(accessRequest.getEmail());
         accessRequestRepository.save(request);
+        log.info("Access request from <" + request.getEmail() + "> registered.");
 
         return "access/success";
     }
