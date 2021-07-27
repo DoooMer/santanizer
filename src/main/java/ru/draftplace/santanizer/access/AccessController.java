@@ -32,6 +32,7 @@ public class AccessController
         view.addAttribute(new AccessRequest());
 
         return "access/form";
+        // 6Lea-sAbAAAAADEryWVUJeAsQJCjRu303KXTR1R1
     }
 
     @PostMapping("/access/request")

@@ -6,14 +6,24 @@
 </head>
 <body>
 <h1>Access request</h1>
-<form action="#" method="post" th:action="@{'/access/request'}" th:object="${accessRequest}">
+<form action="#" method="post" th:action="@{'/access/request'}" th:object="${accessRequest}" id="request">
     <div>
         <label>
             Enter your email for access to service<br>
             <input type="text" th:field="*{email}" placeholder="Email">
         </label>
     </div>
-    <button type="submit">Send</button>
+    <button class="g-recaptcha"
+            data-sitekey="6Lea-sAbAAAAAAC7on6hbWI7H9jPhuuP1MIm3jCi"
+            data-callback='onSubmit'
+            data-action='submit'>Send
+    </button>
 </form>
+<script src="https://www.google.com/recaptcha/api.js"></script>
+<script>
+    function onSubmit(token) {
+        document.getElementById("request").submit();
+    }
+</script>
 </body>
 </html>
