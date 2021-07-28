@@ -2,6 +2,7 @@ package ru.draftplace.santanizer.access;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +21,9 @@ public class AccessController
 {
     private final AccessRequestRepository accessRequestRepository;
 
+    @Value("${recaptcha.client.secret}")
+    private String reCaptchaClientSecret;
+
     @Autowired
     public AccessController(AccessRequestRepository accessRequestRepository)
     {
@@ -30,6 +34,7 @@ public class AccessController
     public String form(Model view)
     {
         view.addAttribute(new AccessRequest());
+        view.addAttribute("recaptchaSecret", reCaptchaClientSecret);
 
         return "access/form";
         // 6Lea-sAbAAAAADEryWVUJeAsQJCjRu303KXTR1R1
