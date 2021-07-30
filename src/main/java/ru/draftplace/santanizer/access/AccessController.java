@@ -7,13 +7,17 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.servlet.view.RedirectView;
 import ru.draftplace.santanizer.access.dao.AccessRequestRepository;
 import ru.draftplace.santanizer.access.dao.AccessRequestStatus;
 import ru.draftplace.santanizer.access.model.AccessRequest;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Optional;
+import java.util.UUID;
 
 @Controller
 @Slf4j
@@ -24,10 +28,14 @@ public class AccessController
     @Value("${recaptcha.client.secret}")
     private String reCaptchaClientSecret;
 
+    // временные ключи для отображения результата
+    private HashMap<UUID, Boolean> results;
+
     @Autowired
     public AccessController(AccessRequestRepository accessRequestRepository)
     {
         this.accessRequestRepository = accessRequestRepository;
+        results = new HashMap<>();
     }
 
     @GetMapping("/access")
@@ -41,7 +49,7 @@ public class AccessController
     }
 
     @PostMapping("/access/request")
-    public String request(@ModelAttribute AccessRequest accessRequest)
+    public RedirectView request(@ModelAttribute AccessRequest accessRequest)
     {
         log.info("start processing request access from <" + accessRequest.getEmail() + ">");
 
@@ -62,19 +70,57 @@ public class AccessController
         if (currentAccess.isPresent()) {
             if (currentAccess.get().getKey().isEmpty()) {
                 log.info("warning request access to <> already exists");
-                return "access/warning";
+                return new RedirectView("/access/warning");
             }
             log.info("error request access to <> already granted");
-            return "access/error";
+            return new RedirectView("/access/error");
         }
 
         // добавить запрос без времени истечения и кода
 
-        ru.draftplace.santanizer.access.dao.AccessRequest request = new ru.draftplace.santanizer.access.dao.AccessRequest();
+        var request = new ru.draftplace.santanizer.access.dao.AccessRequest();
         request.setEmail(accessRequest.getEmail());
         accessRequestRepository.save(request);
+        UUID key = UUID.randomUUID();
+        results.put(key, true);
         log.info("Access request from <" + request.getEmail() + "> registered.");
 
-        return "access/success";
+        return new RedirectView("/access/success/" + key);
+    }
+
+    @GetMapping("/access/warning/{uuid}")
+    public String warning(@PathVariable UUID uuid)
+    {
+        var checkResult = checkResultID(uuid);
+
+        return checkResult != null ? checkResult : "access/warning";
+    }
+
+    @GetMapping("/access/error/{uuid}")
+    public String error(@PathVariable UUID uuid)
+    {
+        var checkResult = checkResultID(uuid);
+
+        return checkResult != null ? checkResult : "access/error";
+    }
+
+    @GetMapping("/access/success/{uuid}")
+    public String success(@PathVariable UUID uuid)
+    {
+        var checkResult = checkResultID(uuid);
+
+        return checkResult != null ? checkResult : "access/success";
+    }
+
+    private String checkResultID(UUID uuid)
+    {
+
+        if (!results.getOrDefault(uuid, false)) {
+            return "access/error";
+        }
+
+        results.remove(uuid);
+
+        return null;
     }
 }

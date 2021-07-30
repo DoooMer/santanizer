@@ -75,9 +75,10 @@ public class AccessActivator
         MimeMessage message = new MimeMessage(mailSession);
         message.setFrom(mailFrom);
         message.setRecipients(Message.RecipientType.TO, request.getEmail());
+        message.setSubject("You request was accepted. Santanizer.");
 
         String link = linkDomain + "/?key=" + request.getKey();
-        message.setContent("<p>Your access request was accepted.</p><p><a href=\"" + link + "\">link</a></p>",
+        message.setContent("<p>Your access request was accepted.</p><p><a href=\"" + link + "\">Click to start</a></p><br><p>If you don't understand what this is about, just ignore the message.</p>",
                 "text/html");
 
         Transport.send(message);
