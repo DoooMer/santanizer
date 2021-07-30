@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.view.RedirectView;
+import org.springframework.web.util.UriComponentsBuilder;
 import ru.draftplace.santanizer.access.dao.AccessRequest;
 import ru.draftplace.santanizer.access.dao.AccessRequestRepository;
 import ru.draftplace.santanizer.access.dao.AccessRequestStatus;
@@ -76,7 +77,8 @@ public class StartController
     public RedirectView add(
             @ModelAttribute Person person,
             @RequestParam(defaultValue = "add") String nextAction,
-            @RequestParam String key
+            @RequestParam String key,
+            UriComponentsBuilder uriBuilder
     )
     {
 
@@ -93,9 +95,13 @@ public class StartController
 
         log.info(logPrefix(key) + "next action: " + nextAction);
 
-        return nextAction.equals("next")
-                ? new RedirectView("/processing?key=" + key)
-                : new RedirectView("/?key=" + key);
+        uriBuilder.queryParam("key", key);
+        var uri = (nextAction.equals("next") ? uriBuilder.path("/processing") : uriBuilder.path("/"))
+                .build()
+                .toUri()
+                .toString();
+
+        return new RedirectView(uri);
     }
 
     /**
@@ -104,7 +110,7 @@ public class StartController
      * @return RedirectView
      */
     @GetMapping("/processing")
-    public RedirectView processing(@RequestParam String key)
+    public RedirectView processing(@RequestParam String key, UriComponentsBuilder uriBuilder)
     {
         try {
             AccessRequest accessRequest = validateAccessByKey(key);
@@ -124,13 +130,19 @@ public class StartController
         Set<Pair> result = pairSelector.select();
         log.info(logPrefix(key) + "ProcessingPairs selected.");
 
-        System.out.println(result);
         for (Pair pair : result) {
             notificationSender.notifySanta(pair.getSanta(), pair.getPerson());
         }
-        log.info(logPrefix(key) + "Notifications sent.");
 
-        return new RedirectView("/result?key=" + key);
+        log.info(logPrefix(key) + "Notifications sent.");
+        var uri = uriBuilder
+                .queryParam("key", key)
+                .path("/result")
+                .build()
+                .toUri()
+                .toString();
+
+        return new RedirectView(uri);
     }
 
     /**
