@@ -1,5 +1,9 @@
 package ru.draftplace.santanizer;
 
+import io.github.bucket4j.Bandwidth;
+import io.github.bucket4j.Bucket;
+import io.github.bucket4j.Bucket4j;
+import io.github.bucket4j.Refill;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -14,6 +18,7 @@ import ru.draftplace.santanizer.access.dao.AccessRequest;
 import ru.draftplace.santanizer.access.dao.AccessRequestRepository;
 import ru.draftplace.santanizer.access.dao.AccessRequestStatus;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 
@@ -27,6 +32,9 @@ public class StartController
 
     private final AccessRequestRepository accessRequestRepository;
 
+    // ограничение частоты запросов
+    private final Bucket rateLimit;
+
     @Autowired
     public StartController(
             KeyPersonStorage storage,
@@ -37,6 +45,9 @@ public class StartController
         this.storage = storage;
         this.notificationSender = notificationSender;
         this.accessRequestRepository = accessRequestRepository;
+        rateLimit = Bucket4j.builder()
+                .addLimit(Bandwidth.classic(3, Refill.greedy(5, Duration.ofHours(1))))
+                .build();
     }
 
     /**
@@ -112,6 +123,11 @@ public class StartController
     @GetMapping("/processing")
     public RedirectView processing(@RequestParam String key, UriComponentsBuilder uriBuilder)
     {
+        if (!rateLimit.tryConsume(1)) {
+            log.warn("[/processing] Request rate limit exceeded.");
+            return new RedirectView("/rate-limit");
+        }
+
         try {
             AccessRequest accessRequest = validateAccessByKey(key);
         } catch (NoAccessException e) {
@@ -176,6 +192,12 @@ public class StartController
         log.info(logPrefix(key) + "Access is closed.");
 
         return "result";
+    }
+
+    @GetMapping("/rate-limit")
+    public String rateLimit()
+    {
+        return "access/rate-limit";
     }
 
     protected AccessRequest validateAccessByKey(String key)

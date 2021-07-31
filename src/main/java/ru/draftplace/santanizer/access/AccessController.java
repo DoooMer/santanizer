@@ -36,6 +36,7 @@ public class AccessController
     // временные ключи для отображения результата
     private final HashMap<UUID, Boolean> results;
 
+    // ограничение частоты запросов
     private final Bucket rateLimit;
 
     @Autowired
