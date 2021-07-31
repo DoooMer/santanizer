@@ -1,5 +1,9 @@
 package ru.draftplace.santanizer.access;
 
+import io.github.bucket4j.Bandwidth;
+import io.github.bucket4j.Bucket;
+import io.github.bucket4j.Bucket4j;
+import io.github.bucket4j.Refill;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,6 +18,7 @@ import ru.draftplace.santanizer.access.dao.AccessRequestRepository;
 import ru.draftplace.santanizer.access.dao.AccessRequestStatus;
 import ru.draftplace.santanizer.access.model.AccessRequest;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Optional;
@@ -29,18 +34,28 @@ public class AccessController
     private String reCaptchaClientSecret;
 
     // временные ключи для отображения результата
-    private HashMap<UUID, Boolean> results;
+    private final HashMap<UUID, Boolean> results;
+
+    private final Bucket rateLimit;
 
     @Autowired
     public AccessController(AccessRequestRepository accessRequestRepository)
     {
         this.accessRequestRepository = accessRequestRepository;
         results = new HashMap<>();
+        rateLimit = Bucket4j.builder()
+                .addLimit(Bandwidth.classic(3, Refill.greedy(5, Duration.ofHours(1))))
+                .build();
     }
 
     @GetMapping("/access")
     public String form(Model view)
     {
+        if (!rateLimit.tryConsume(1)) {
+            log.warn("[/access] Request rate limit exceeded.");
+            return "access/rate-limit";
+        }
+
         view.addAttribute(new AccessRequest());
         view.addAttribute("recaptchaSecret", reCaptchaClientSecret);
 
@@ -69,10 +84,10 @@ public class AccessController
 
         if (currentAccess.isPresent()) {
             if (currentAccess.get().getKey().isEmpty()) {
-                log.info("warning request access to <> already exists");
+                log.info("warning request access to <" + currentAccess.get().getEmail() + "> already exists");
                 return new RedirectView("/access/warning");
             }
-            log.info("error request access to <> already granted");
+            log.info("error request access to <" + currentAccess.get().getEmail() + "> already granted");
             return new RedirectView("/access/error");
         }
 
